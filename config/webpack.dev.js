@@ -5,8 +5,8 @@ module.exports = {
   // 入口
   entry: "./src/main.js",
   output: {
-    path: path.resolve(__dirname, "dist"),
-    filename: "js/main.js",
+    // path: path.resolve(__dirname, "../dist"),
+    filename: "static/js/main.js",
     // 打包前清空dist目录
     clean: true
   },
@@ -63,15 +63,21 @@ module.exports = {
   // 插件
   plugins: [
     new ESLintPlugin({
-      context: path.resolve(__dirname, 'src'),
+      context: path.resolve(__dirname, '../src'),
       exclude: 'node_modeules',
       cache: true,
-      cacheLocation: path.resolve(__dirname, 'node_modules/.cache/eslints'),
+      cacheLocation: path.resolve(__dirname, '../node_modules/.cache/eslints'),
     }),
     new HtmlWebpackPlugin({
-      template: path.resolve(__dirname, 'public/index.html')
+      template: path.resolve(__dirname, '../public/index.html')
     })
   ],
-  mode: "development"
+  mode: "development",
+  // 开发服务器
+  devServer: {
+    host: 'localhost',
+    port: '8080',
+    open: true //自动打开浏览器
+  },
 
 }
