@@ -1,9 +1,12 @@
 const path = require("path")
 const ESLintPlugin = require('eslint-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+// const TerserWebpackPlugin = require('terser-webpack-plugin')
+const threads = require('os').cpus().length;
 module.exports = {
   // 入口
   entry: "./src/main.js",
+  devtool: "cheap-module-source-map",
   output: {
     // path: path.resolve(__dirname, "../dist"),
     filename: "static/js/main.js",
@@ -50,12 +53,23 @@ module.exports = {
       {
         test: /\.js$/,
         exclude: /(node_modules)/,
-        use: {
-          loader: 'babel-loader',
-          options: {
-            presets: ['@babel/preset-env']
+        use: [
+          {
+            loader: 'thread-loader',
+            options: {
+              workers: threads
+            }
+          },
+          {
+            loader: 'babel-loader',
+            options: {
+              presets: ['@babel/preset-env'],
+              cacheDirectory: true,
+              cacheCompression: false,
+              plugins: ['@babel/plugin-transform-runtime']
+            }
           }
-        }
+        ]
       }
     ],
 
@@ -67,17 +81,22 @@ module.exports = {
       exclude: 'node_modeules',
       cache: true,
       cacheLocation: path.resolve(__dirname, '../node_modules/.cache/eslints'),
+      threads, //开启多进程和设置进程数
     }),
     new HtmlWebpackPlugin({
       template: path.resolve(__dirname, '../public/index.html')
-    })
+    }),
+    // new TerserWebpackPlugin({
+    //   parallel: threads // 开启多进程和设置进程数
+    // })
   ],
   mode: "development",
   // 开发服务器
   devServer: {
     host: 'localhost',
     port: '8080',
-    open: true //自动打开浏览器
+    open: true, //自动打开浏览器
+    hot: true
   },
 
 }

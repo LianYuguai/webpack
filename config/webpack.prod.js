@@ -3,13 +3,16 @@ const ESLintPlugin = require('eslint-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const CssMinimizerPlugin = require("css-minimizer-webpack-plugin");
+const threads = require('os').cpus().length;
+const TerserWebpackPlugin = require('terser-webpack-plugin')
 
 module.exports = {
   // 入口
   entry: "./src/main.js",
+  devtool: "source-map",
   output: {
     path: path.resolve(__dirname, "../dist"),
-    filename: "static/js/main.js",
+    filename: "static/js/[name].js",
     // 打包前清空dist目录
     clean: true
   },
@@ -85,12 +88,23 @@ module.exports = {
       {
         test: /\.js$/,
         exclude: /(node_modules)/,
-        use: {
-          loader: 'babel-loader',
-          options: {
-            presets: ['@babel/preset-env']
+        use: [
+          {
+            loader: 'thread-loader',
+            options: {
+              workers: threads
+            }
+          },
+          {
+            loader: 'babel-loader',
+            options: {
+              presets: ['@babel/preset-env'],
+              cacheDirectory: true,
+              cacheCompression: false,
+              plugins: ['@babel/plugin-transform-runtime'] // 减少代码体积
+            }
           }
-        }
+        ]
       }
     ],
 
@@ -99,8 +113,32 @@ module.exports = {
     minimizer: [
       // 在 webpack@5 中，你可以使用 `...` 语法来扩展现有的 minimizer（即 `terser-webpack-plugin`），将下一行取消注释
       // `...`,
+      // 压缩css
       new CssMinimizerPlugin(),
+      // 压缩js
+      new TerserWebpackPlugin({
+        parallel: threads // 开启多进程和设置进程数
+      })
     ],
+    splitChunks: {
+      chunks: 'all',
+      // minSize: 20000,
+      // minRemainingSize: 0,
+      // minChunks: 1,
+      // cacheGroups: {
+      // defaultVendors: {
+      //   test: /[\\/]node_modules[\\/]/,
+      //   priority: -10,
+      //   reuseExistingChunk: true,
+      // },
+      // default: {
+      //   minSize: 0,
+      //   minChunks: 1,
+      //   priority: -20,
+      //   reuseExistingChunk: true,
+      // },
+      // },
+    },
   },
   // 插件
   plugins: [
@@ -109,6 +147,7 @@ module.exports = {
       exclude: 'node_modeules',
       cache: true,
       cacheLocation: path.resolve(__dirname, '../node_modules/.cache/eslints'),
+      threads
     }),
     new HtmlWebpackPlugin({
       template: path.resolve(__dirname, '../public/index.html')
